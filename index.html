@@ -1,207 +1,225 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Google Dorks by ORSU</title>
-    <style>
-      body {
-        font-family: Arial, sans-serif;
-        max-width: 800px;
-        margin: 0 auto;
-        background-color: #070707;
-        color: #f0f0f0;
-        padding: 20px;
-        box-sizing: border-box;
-      }
-      h1 {
-        font-size: 2.5em;
-        margin-bottom: 20px;
-      }
-      label {
-        font-size: 1.2em;
-      }
-      input {
-        font-size: 1em;
-        padding: 5px;
-        margin-left: 5px;
-      }
-      button {
-        font-size: 1em;
-        background-color: #4caf50;
-        color: white;
-        border: none;
-        padding: 6px 12px;
-        cursor: pointer;
-        margin-left: 5px;
-      }
-      button:hover {
-        background-color: #45a049;
-      }
-      ul {
-        list-style-type: none;
-        padding: 0;
-      }
-      li {
-        margin-bottom: 10px;
-      }
-      a {
-        text-decoration: none;
-        color: #3bf203;
-      }
-      a:hover {
-        text-decoration: underline;
-      }
-      p {
-        margin: 0;
-      }
-      p.description {
-        margin-bottom: 5px;
-        font-weight: bold;
-      }
-      section {
-        margin-top: 20px;
-        border-top: 1px solid #ccc;
-        padding-top: 20px;
-      }
-      h2 {
-        margin-bottom: 10px;
-      }
-      ul.link-list {
-        margin: 0;
-        padding: 0;
-        list-style-type: none;
-      }
-      ul.link-list li {
-        margin-bottom: 10px;
-      }
-    </style>
-  </head>
-  <body>
-    <h1>Google Dorks for Web Hacking by ORSU</h1>
-    <p>
-      <label for="domainInput">Enter a domain:</label>
-      <input type="text" id="domainInput" placeholder="example.com" />
-      <button id="updateDomainButton">Update Domain</button>
-    </p>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Google Dorks — Bug Bounty Toolkit</title>
+  <style>
+    :root{
+      --bg:#0b0b0c; --card:#0f1112; --muted:#9aa3a8; --accent:#3bf203; --glass:rgba(255,255,255,0.03);
+      --radius:12px; font-family:Inter, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
+    }
+    *{box-sizing:border-box}
+    body{margin:0; background:linear-gradient(180deg,#070707,#0f0f10); color:#e9f0ea; padding:28px;}
+    .wrap{max-width:1100px;margin:0 auto}
+    header{display:flex;align-items:center;justify-content:space-between;gap:16px}
+    h1{font-size:24px;margin:0}
+    p.lead{margin:6px 0 0;color:var(--muted)}
+    .controls{display:flex;gap:8px;margin:18px 0;flex-wrap:wrap}
+    .input, .select, button{background:var(--card);border:1px solid rgba(255,255,255,0.03);padding:10px 12px;border-radius:10px;color:inherit}
+    .input{min-width:260px}
+    button{cursor:pointer}
+    .btn-primary{background:linear-gradient(90deg,#1b8f3a,var(--accent));color:#051207;font-weight:600}
+    .list{margin-top:18px;display:grid;grid-template-columns:1fr;gap:12px}
+    @media(min-width:880px){.list{grid-template-columns:1fr 1fr}}
+    .card{background:var(--glass);padding:12px;border-radius:var(--radius);border:1px solid rgba(255,255,255,0.03)}
+    .cat{font-size:13px;color:var(--muted);margin-bottom:8px}
+    .dork-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+    .query{flex:1;background:#00000055;padding:8px 10px;border-radius:8px;font-family:monospace;font-size:13px}
+    .tiny{font-size:12px;color:var(--muted)}
+    .actions{display:flex;gap:6px}
+    .chip{background:#00000055;padding:6px 8px;border-radius:8px;border:1px solid rgba(255,255,255,0.02);cursor:pointer}
+    .searchbar{display:flex;gap:8px;align-items:center}
+    .footer{margin-top:18px;color:var(--muted);font-size:13px}
+    .topbar{display:flex;gap:8px;align-items:center}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div>
+        <h1>Google Dorks — Bug Bounty Toolkit</h1>
+        <p class="lead">A selectable list of Google dorks focused for bug bounty, web app security, and pentesting.</p>
+      </div>
+      <div class="topbar">
+        <button id="downloadAll" class="chip">Download all (.txt)</button>
+        <button id="copySelected" class="chip">Copy selected</button>
+      </div>
+    </header>
 
-    <ul id="dorkList"></ul>
+    <div class="controls">
+      <div class="searchbar">
+        <label class="tiny" for="domain">Domain(s)</label>
+        <input id="domain" class="input" placeholder="example.com or example.com,api.example.com" />
+        <button id="apply" class="btn-primary">Apply domain</button>
+      </div>
 
-    <script>
-      let originalDorks = [];
+      <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
+        <input id="filter" class="input" placeholder="Filter categories or text" />
+        <select id="mode" class="select">
+          <option value="replace">Replace example.com</option>
+          <option value="append">Append domain variations</option>
+        </select>
+      </div>
+    </div>
 
-      async function fetchDorks() {
-        const url =
-          "https://raw.githubusercontent.com/TakSec/google-dorks-bug-bounty/main/README.md";
-        const response = await fetch(url);
-        const text = await response.text();
+    <div id="list" class="list"></div>
 
-        const dorkList = document.getElementById("dorkList");
-        const regex = /(?:^### (.+)|^> (.+))/gm;
-        let match;
-        let title = "";
-        let firstDork = true;
+    <div class="footer">Built from TakSec / ORSU dorks. Use only on targets you are authorized to test.</div>
+  </div>
 
-        while ((match = regex.exec(text)) !== null) {
-          if (match[1]) {
-            // Title match
-            title = match[1];
-          } else {
-            // Dork match
-            if (firstDork) {
-              firstDork = false;
-              continue;
-            }
-            const dork = match[2];
-            originalDorks.push(dork);
-            const listItem = createDorkListItem(dork, title);
-            dorkList.appendChild(listItem);
-          }
+  <script>
+    // Data: categories and dorks
+    const DORKS = [
+      {cat: 'Broad domain search w/ negative search', q: 'site:example.com -www -shop -share -ir -mfa'},
+      {cat: 'PHP extension w/ parameters', q: 'site:example.com ext:php inurl:?'},
+      {cat: 'API Endpoints', q: 'site:example[.]com inurl:api | site:*/rest | site:*/v1 | site:*/v2 | site:*/v3'},
+      {cat: 'Juicy Extensions', q: 'site:"example[.]com" ext:log | ext:txt | ext:conf | ext:cnf | ext:ini | ext:env | ext:sh | ext:bak | ext:backup | ext:swp | ext:old | ext:~ | ext:git | ext:svn | ext:htpasswd | ext:htaccess | ext:json'},
+      {cat: 'High % inurl keywords', q: 'inurl:conf | inurl:env | inurl:cgi | inurl:bin | inurl:etc | inurl:root | inurl:sql | inurl:backup | inurl:admin | inurl:php site:example[.]com'},
+      {cat: 'Server Errors', q: 'inurl:"error" | intitle:"exception" | intitle:"failure" | intitle:"server at" | inurl:exception | "database error" | "SQL syntax" | "undefined index" | "unhandled exception" | "stack trace" site:example[.]com'},
+      {cat: 'XSS prone parameters', q: 'inurl:q= | inurl:s= | inurl:search= | inurl:query= | inurl:keyword= | inurl:lang= inurl:& site:example.com'},
+      {cat: 'Open Redirect prone parameters', q: 'inurl:url= | inurl:return= | inurl:next= | inurl:redirect= | inurl:redir= | inurl:ret= | inurl:r2= | inurl:page= inurl:& inurl:http site:example.com'},
+      {cat: 'SQLi Prone Parameters', q: 'inurl:id= | inurl:pid= | inurl:category= | inurl:cat= | inurl:action= | inurl:sid= | inurl:dir= inurl:& site:example.com'},
+      {cat: 'SSRF Prone Parameters', q: 'inurl:http | inurl:url= | inurl:path= | inurl:dest= | inurl:html= | inurl:data= | inurl:domain=  | inurl:page= inurl:& site:example.com'},
+      {cat: 'LFI Prone Parameters', q: 'inurl:include | inurl:dir | inurl:detail= | inurl:file= | inurl:folder= | inurl:inc= | inurl:locate= | inurl:doc= | inurl:conf= inurl:& site:example.com'},
+      {cat: 'RCE Prone Parameters', q: 'inurl:cmd | inurl:exec= | inurl:query= | inurl:code= | inurl:do= | inurl:run= | inurl:read=  | inurl:ping= inurl:& site:example.com'},
+      {cat: 'File upload endpoints', q: 'site:example.com intext:"choose file" | intext:"select file" | intext:"upload PDF"'},
+      {cat: 'API Docs', q: 'inurl:apidocs | inurl:api-docs | inurl:swagger | inurl:api-explorer | inurl:redoc | inurl:openapi | intitle:"Swagger UI" site:"example[.]com"'},
+      {cat: 'Login Pages', q: 'inurl:login | inurl:signin | intitle:login | intitle:signin | inurl:secure site:example[.]com'},
+      {cat: 'Test Environments', q: 'inurl:test | inurl:env | inurl:dev | inurl:staging | inurl:sandbox | inurl:debug | inurl:temp | inurl:internal | inurl:demo site:example.com'},
+      {cat: 'Sensitive Documents', q: 'site:example.com ext:txt | ext:pdf | ext:xml | ext:xls | ext:xlsx | ext:ppt | ext:pptx | ext:doc | ext:docx \nintext:"confidential" | intext:"Not for Public Release" | intext:"internal use only" | intext:"do not distribute"'},
+      {cat: 'Sensitive Parameters', q: 'inurl:email= | inurl:phone= | inurl:name= | inurl:user= inurl:& site:example[.]com'},
+      {cat: 'Adobe Experience Manager (AEM)', q: 'inurl:/content/usergenerated | inurl:/content/dam | inurl:/jcr:content | inurl:/libs/granite | inurl:/etc/clientlibs | inurl:/content/geometrixx | inurl:/bin/wcm | inurl:/crx/de site:example[.]com'},
+      {cat: 'Disclosed XSS and Open Redirects', q: 'site:openbugbounty.org inurl:reports intext:"example.com"'},
+      {cat: 'Google Groups', q: 'site:groups.google.com "example.com"'},
+      {cat: 'Code Leaks — pastebin', q: 'site:pastebin.com "example.com"'},
+      {cat: 'Code Leaks — jsfiddle', q: 'site:jsfiddle.net "example.com"'},
+      {cat: 'Code Leaks — codebeautify', q: 'site:codebeautify.org "example.com"'},
+      {cat: 'Code Leaks — codepen', q: 'site:codepen.io "example.com"'},
+      {cat: 'Cloud Storage — S3', q: 'site:s3.amazonaws.com "example.com"'},
+      {cat: 'Cloud Storage — Azure Blob', q: 'site:blob.core.windows.net "example.com"'},
+      {cat: 'Cloud Storage — Google APIs', q: 'site:googleapis.com "example.com"'},
+      {cat: 'Cloud Storage — Google Drive', q: 'site:drive.google.com "example.com"'},
+      {cat: 'Cloud Storage — Azure DevOps', q: 'site:dev.azure.com "example[.]com"'},
+      {cat: 'Cloud Storage — OneDrive', q: 'site:onedrive.live.com "example[.]com"'},
+      {cat: 'Cloud Storage — DigitalOcean Spaces', q: 'site:digitaloceanspaces.com "example[.]com"'},
+      {cat: 'Cloud Storage — S3 external', q: 'site:s3-external-1.amazonaws.com "example[.]com"'},
+      {cat: 'Cloud Storage — S3 dualstack', q: 'site:s3.dualstack.us-east-1.amazonaws.com "example[.]com"'},
+      {cat: 'Cloud Storage — Dropbox', q: 'site:dropbox.com/s "example[.]com"'},
+      {cat: 'Docs — Google Docs', q: 'site:docs.google.com inurl:"/d/" "example[.]com"'},
+      {cat: 'JFrog Artifactory', q: 'site:jfrog.io "example[.]com"'},
+      {cat: 'Firebase', q: 'site:firebaseio.com "example[.]com"'},
+      {cat: 'Dorks w/o domain — Bug Bounty programs', q: '"submit vulnerability report" | "powered by bugcrowd" | "powered by hackerone"'},
+      {cat: 'Dorks w/o domain — security.txt', q: 'site:*/security.txt "bounty"'},
+      {cat: 'Dorks w/o domain — Apache server-status', q: 'site:*/server-status apache'},
+      {cat: 'WordPress', q: 'inurl:/wp-admin/admin-ajax.php'},
+      {cat: 'Drupal', q: 'intext:"Powered by" & intext:Drupal & inurl:user'},
+      {cat: 'Joomla', q: 'site:*/joomla/login'},
+      {cat: 'Top Parameters (reference)', q: 'https://github.com/lutfumertceylan/top25-parameter'},
+      {cat: 'Proviesec dorks (reference)', q: 'https://github.com/Proviesec/google-dorks'}
+    ];
+
+    // render
+    const listEl = document.getElementById('list');
+    function render(filter=''){
+      listEl.innerHTML = '';
+      const lower = filter.trim().toLowerCase();
+      DORKS.forEach((d,i)=>{
+        if(lower && !(d.cat.toLowerCase()+ ' '+ d.q.toLowerCase()).includes(lower)) return;
+        const card = document.createElement('div'); card.className='card';
+        const cat = document.createElement('div'); cat.className='cat'; cat.textContent = d.cat;
+        const row = document.createElement('div'); row.className='dork-row';
+        const q = document.createElement('div'); q.className='query'; q.textContent = d.q;
+        q.title = d.q;
+        const actions = document.createElement('div'); actions.className='actions';
+
+        const openBtn = document.createElement('button'); openBtn.className='chip'; openBtn.textContent='Open';
+        openBtn.onclick = ()=>{ window.open('https://www.google.com/search?q='+encodeURIComponent(q.textContent),'_blank') }
+
+        const copyBtn = document.createElement('button'); copyBtn.className='chip'; copyBtn.textContent='Copy';
+        copyBtn.onclick = async ()=>{ await navigator.clipboard.writeText(q.textContent); copyBtn.textContent='Copied'; setTimeout(()=>copyBtn.textContent='Copy',1200) }
+
+        const selectBtn = document.createElement('button'); selectBtn.className='chip'; selectBtn.textContent='Select';
+        selectBtn.onclick = ()=>{ card.classList.toggle('selected'); selectBtn.textContent = card.classList.contains('selected') ? 'Selected' : 'Select' }
+
+        actions.append(openBtn, copyBtn, selectBtn);
+        row.append(q, actions);
+        card.append(cat, row);
+        listEl.append(card);
+      })
+    }
+
+    render();
+
+    // apply domain
+    document.getElementById('apply').addEventListener('click', ()=>{
+      const domains = document.getElementById('domain').value.split(',').map(s=>s.trim()).filter(Boolean);
+      if(domains.length===0) return alert('Enter at least one domain');
+      const mode = document.getElementById('mode').value;
+
+      const joined = mode==='replace'
+        ? domains.map(d=>`site:${d}`).join(' | ')
+        : domains.map(d=>`${d}`).join(' | ');
+
+      // update displayed queries by replacing example.com patterns conservatively
+      DORKS.forEach((d,idx)=>{
+        let q = d.q;
+        // Replace common masked forms
+        q = q.replace(/example\[?\.?\]?com/gi, domains.join('|'));
+        q = q.replace(/\bexample\.com\b/gi, domains.join('|'));
+        q = q.replace(/\"example\[\.]com\"/gi, '"'+domains.join('" | "')+'"');
+        if(mode==='replace'){
+          q = q.replace(/site:[^\s]+/gi, matched=>{
+            // replace only literal site:example variants
+            if(/example/i.test(matched)) return matched.replace(/example[^\s]*/i, domains[0]);
+            return matched;
+          });
         }
-      }
+        DORKS[idx].q_display = q;
+      });
 
-      let prevTitle = "";
+      // re-render using q_display where present
+      listEl.innerHTML='';
+      DORKS.forEach((d, i)=>{
+        const qtext = d.q_display || d.q;
+        const card = document.createElement('div'); card.className='card';
+        const cat = document.createElement('div'); cat.className='cat'; cat.textContent = d.cat;
+        const row = document.createElement('div'); row.className='dork-row';
+        const q = document.createElement('div'); q.className='query'; q.textContent = qtext;
+        const actions = document.createElement('div'); actions.className='actions';
+        const openBtn = document.createElement('button'); openBtn.className='chip'; openBtn.textContent='Open';
+        openBtn.onclick = ()=> window.open('https://www.google.com/search?q='+encodeURIComponent(q.textContent),'_blank');
+        const copyBtn = document.createElement('button'); copyBtn.className='chip'; copyBtn.textContent='Copy';
+        copyBtn.onclick = async ()=>{ await navigator.clipboard.writeText(q.textContent); copyBtn.textContent='Copied'; setTimeout(()=>copyBtn.textContent='Copy',1200) };
+        const selectBtn = document.createElement('button'); selectBtn.className='chip'; selectBtn.textContent='Select';
+        selectBtn.onclick = ()=>{ card.classList.toggle('selected'); selectBtn.textContent = card.classList.contains('selected') ? 'Selected' : 'Select' }
+        actions.append(openBtn, copyBtn, selectBtn);
+        row.append(q, actions);
+        card.append(cat, row);
+        listEl.append(card);
+      });
+    });
 
-      function createDorkListItem(dork, description) {
-        const googleLink = `https://www.google.com/search?q=${encodeURIComponent(
-          dork
-        )}`;
+    // filter
+    document.getElementById('filter').addEventListener('input', (e)=>render(e.target.value));
 
-        const listItem = document.createElement("li");
+    // download
+    document.getElementById('downloadAll').addEventListener('click', ()=>{
+      const lines = DORKS.map(d=>`# ${d.cat}\n${d.q}\n`).join('\n');
+      const blob = new Blob([lines],{type:'text/plain'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a'); a.href = url; a.download = 'google-dorks.txt'; a.click(); URL.revokeObjectURL(url);
+    });
 
-        if (description && description !== prevTitle) {
-          const desc = document.createElement("p");
-          desc.textContent = description;
-          desc.classList.add("description");
-          listItem.appendChild(desc);
-          prevTitle = description;
-        }
+    // copy selected
+    document.getElementById('copySelected').addEventListener('click', async ()=>{
+      const selected = Array.from(document.querySelectorAll('.card.selected .query')).map(el=>el.textContent);
+      if(selected.length===0) return alert('No selected items — click Select on cards you want');
+      const text = selected.join('\n');
+      await navigator.clipboard.writeText(text);
+      alert('Copied '+selected.length+' queries to clipboard');
+    });
 
-        const link = document.createElement("a");
-        link.href = googleLink;
-        link.textContent = dork;
-        link.classList.add("dorkLink");
-        link.target = "_blank";
-
-        listItem.appendChild(link);
-
-        return listItem;
-      }
-
-      function updateDomain() {
-        const domainInput = document.getElementById("domainInput");
-        const domains = domainInput.value
-          .split(",")
-          .map((domain) => domain.trim());
-
-        if (domains.length === 0) return;
-
-        const dorkLinks = document.querySelectorAll(".dorkLink");
-        dorkLinks.forEach((link, index) => {
-          let originalDork = originalDorks[index];
-
-          // For site:example.com
-          if (/site:"?example\[?\.\]?com"?/i.test(originalDork)) {
-            const joinedDomains = domains.map((d) => `site:${d}`).join(" | ");
-            originalDork = originalDork.replace(
-              /site:"?example\[?\.\]?com"?/gi,
-              joinedDomains
-            );
-          }
-
-          // For "example.com"
-          else if (/["']example\[?\.\]?com["']/i.test(originalDork)) {
-            const joinedDomains = domains.map((d) => `"${d}"`).join(" | ");
-            originalDork = originalDork.replace(
-              /["']example\[?\.\]?com["']/gi,
-              joinedDomains
-            );
-          }
-
-          // For intext:"example.com"
-          else if (originalDork.includes('intext:"example.com"')) {
-            const joinedDomains = domains
-              .map((d) => `intext:"${d}"`)
-              .join(" | ");
-            originalDork = originalDork.replace(
-              /intext:"example\.com"/gi,
-              joinedDomains
-            );
-          }
-
-          const updatedLink = `https://www.google.com/search?q=${encodeURIComponent(
-            originalDork
-          )}`;
-
-          link.textContent = originalDork;
-          link.href = updatedLink;
-        });
-      }
-
-      const updateDomainButton = document.getElementById("updateDomainButton");
-      updateDomainButton.addEventListener("click", updateDomain);
-
-      fetchDorks();
-    </script>
-  </body>
+  </script>
+</body>
 </html>
